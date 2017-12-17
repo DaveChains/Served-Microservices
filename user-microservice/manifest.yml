@@ -1,0 +1,10 @@
+---
+applications:
+- name: user-microservice
+  host: user-microservice-${random-word}
+  memory: 512M
+  instances: 2
+  timeout: 90
+  path: target/user-microservice-0.0.1.jar
+#  env:
+#    SPRING_PROFILES_ACTIVE: docker

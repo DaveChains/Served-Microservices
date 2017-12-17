@@ -1,0 +1,27 @@
+
+spring:
+  profiles: dev
+  application:
+    name: search
+  cloud:
+    consul:
+      host: discovery
+      config:
+      enabled: true
+      discovery:
+         enabled: true
+         register: true
+         healthCheckInterval: 15s
+         health-check-timeout: 1s
+  encrypt:
+      failOnError: false
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,27 @@
+server:
+  port: 10000
+
+#zuul:
+#  routes:
+#    api:
+#     path: /api/user/**
+#     serviceId: user
+
+logging:
+  level:
+    org.springframework: INFO
+    com.netflix: DEBUG
+
+endpoints:
+  restart:
+    enabled: true
+  shutdown:
+    enabled: true
+  health:
+    sensitive: false
+
+ribbon:
+  consul:
+    enabled: true
+
+

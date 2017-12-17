@@ -1,0 +1,158 @@
+version: "2"
+
+services:
+
+  mysql:
+    image: mysql:latest
+    ports:
+       - "3306:3306"
+    environment:
+         MYSQL_USER: root
+         MYSQL_ROOT_PASSWORD: pa55w0rd
+    volumes:
+      - ./db/users-dumb-schema.sql:/docker-entrypoint-initdb.d/users-dumb-schema.sql
+      - ./db/served_restaurants-dumb.sql:/docker-entrypoint-initdb.d/served_restaurants-dumb.sql
+      #TODO Create Schema served_finance for payment microservice.
+#      - ./db/served_finance-dumb-schema.sql:/docker-entrypoint-initdb.d/served_finance-dumb-schema.sql
+
+#  elasticsearch:
+#    extends:
+#        file: elasticsearch/docker-compose.yml
+#        service: elasticsearch
+
+  elasticsearch:
+      image: elasticsearch:latest
+#      command: elasticsearch -Des.network.host=0.0.0.0
+      ports:
+        - "9200:9200"
+        - "9300:9300"
+
+  mongodata:
+    image: mongo:3.0.4
+    volumes:
+    - /data/db
+    command: --break-mongo
+
+  mongo:
+    image: tutum/mongodb
+    volumes_from:
+      - mongodata
+    ports:
+      - "27017:27017"
+    environment:
+        MONGODB_USER: test_user
+        MONGODB_DATABASE: test_db
+        MONGODB_PASS: pa55w0rd
+#    command: --smallfiles --rest --auth
+
+  parse-server:
+     image: mckaynz/parse-server
+     ports:
+       - "1337:1337"
+     environment:
+        APP_ID: GcHJ4YpetHWmfjyH0EVll3N7VUmljf25wnOKnPs
+#        APP_NAME: Optional. Sets both the Parse internal app name, and in the logs
+        CLIENT_KEY: GcHJ4YpetHWmfjyH0EVll3N7VUmljf25wnOKnPs
+#        CLOUD: Defaults to /cloud/main.js
+        DATABASE_URI: mongodb://27017
+        MASTER_KEY: Required
+#        PORT: Defaults to 1337, coerced to a number
+#        PUBLIC_SERVER_URL: Public-facing URL for server, defaults to SERVER_URL
+        SERVER_URL: http://localhost
+     depends_on:
+        -mongo
+
+  discovery:
+    image: progrium/consul
+    command: -server -bootstrap
+    ports:
+        - "8300:8300"
+        - "8400:8400"
+        - "8500:8500"
+        - "8600:53/udp"
+
+  gateway:
+    image: served/api-gateway-microservice
+    ports:
+      - "10000:10000"
+    depends_on:
+     - discovery
+
+  user:
+#    hostname: user
+    image: served/user-microservice
+    ports:
+       - "8085"
+    depends_on:
+      - discovery
+      - mysql
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+
+#  payment:
+#    hostname: payment
+#    image: served/payment-microservice
+#    ports:
+#      - "8086"
+#    depends_on:
+#      - discovery
+#      - mysql
+#    environment:
+#      - SPRING_PROFILES_ACTIVE=dev
+#
+  search:
+    hostname: search
+    image: served/searching-microservice
+    ports:
+       - "8087:8087"
+    depends_on:
+      - mysql
+      - elasticsearch
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+
+  restaurant:
+#    hostname: restaurant
+    image: served/restaurant-microservice
+    ports:
+       - "8088"
+    depends_on:
+      - discovery
+      - mysql
+      - user
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+
+  order:
+    #    hostname: order
+    image: served/order-microservice
+    ports:
+      - "8089"
+    depends_on:
+      - discovery
+      - mongo
+      - user
+#      - payment
+      - search
+      - restaurant
+      - notification
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+
+  notification:
+    #    hostname: notification
+    image: served/notification-microservice
+    ports:
+      - "8090"
+    depends_on:
+      - discovery
+      - mongo
+      - user
+#      - payment
+      - search
+      - restaurant
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+
+
+

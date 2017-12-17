@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: gateway
+  cloud:
+    consul:
+      ribbon:
+        enabled: true
+      host: discovery
+      config:
+      enabled: true
+      discovery:
+         enabled: true
+         register: true
+         healthCheckInterval: 15s
+         health-check-timeout: 1s
+  ribbon:
+    ServerListRefreshInterval: 10000
+
+encrypt:
+  failOnError: false

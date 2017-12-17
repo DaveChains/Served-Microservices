@@ -1,0 +1,38 @@
+
+spring:
+  profiles: dev
+  application:
+    name: restaurant
+  cloud:
+    consul:
+      host: discovery
+      config:
+      enabled: true
+      discovery:
+         enabled: true
+         register: true
+#         healthCheckPath: ${spring.cloud.consul.discovery.instanceId}/health
+         healthCheckInterval: 15s
+         health-check-timeout: 1s
+         tag-id: ${random.value}
+         instance-id: ${spring.application.name}:${spring.cloud.consul.discovery.instance_id:${random.value}}
+#         instanceId: ${spring.application.name}:${vcap.application.instance_id:${spring.application.instance_id:${random.value}}}
+         tags: ${spring.cloud.consul.discovery.tag-id}
+#         prefer-ip-address: true
+#         register-health-check: true
+#          heartbeat:
+#                    enabled: true
+
+  ribbon:
+        enabled: true
+  encrypt:
+      failOnError: false
+
+
+
+
+
+
+
+
+

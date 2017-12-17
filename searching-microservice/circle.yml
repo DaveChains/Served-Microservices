@@ -1,0 +1,38 @@
+machine:
+  java:
+    version: oraclejdk8
+  services:
+    - docker
+  environment:
+    PROJECT_NAME: serveme-app
+    APP_NAME: searching-engine-service
+    DEPLOYMENT_NAME: searching-engine-service
+    CLOUDSDK_COMPUTE_ZONE: europe-west1-c
+    CLUSTER_NAME_STAGING: staging-cluster
+    CLUSTER_NAME_LIVE: live-cluster
+
+dependencies:
+  cache_directories:
+    - "~/kubernetes"
+  pre:
+    - if [[ "$CIRCLE_BRANCH" == live ]]; then ./infra/configure-gcloud.sh $PROJECT_NAME $CLUSTER_NAME_LIVE; else ./infra/configure-gcloud.sh $PROJECT_NAME $CLUSTER_NAME_STAGING; fi
+    - mvn package
+    - ./infra/pull-docker-image.sh
+    - ./infra/build-image.sh $CIRCLE_BRANCH $PROJECT_NAME $APP_NAME $CIRCLE_BRANCH$CIRCLE_SHA1
+
+#test:
+#  post:
+#    - docker run -d -p 8085:8085  gcr.io/kubernetes-test-1309/test1:v4; sleep 10
+#    - curl --retry 10 --retry-delay 5 -v http://localhost:8085/test
+
+deployment:
+  staging:
+    branch: master
+    commands:
+      - ./infra/publish-image.sh $PROJECT_NAME $APP_NAME $CIRCLE_BRANCH$CIRCLE_SHA1
+      - ./infra/deploy.sh $PROJECT_NAME $DEPLOYMENT_NAME $APP_NAME $CIRCLE_BRANCH$CIRCLE_SHA1
+  live:
+    branch: live
+    commands:
+      - ./infra/publish-image.sh $PROJECT_NAME $APP_NAME $CIRCLE_BRANCH$CIRCLE_SHA1
+      - ./infra/deploy.sh $PROJECT_NAME $DEPLOYMENT_NAME $APP_NAME $CIRCLE_BRANCH$CIRCLE_SHA1
